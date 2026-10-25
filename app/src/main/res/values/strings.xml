@@ -149,6 +149,9 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_auto">Auto</string>
+    <string name="home_style">Home style</string>
+    <string name="home_style_plume">Plume</string>
+    <string name="home_style_default">Default (CleanFrame dock)</string>
     <!-- Season and episode on a Continue Watching card, for example "S1 E3". -->
     <string name="season_episode">S%1$s E%2$s</string>
     <!-- Home setup popups -->
