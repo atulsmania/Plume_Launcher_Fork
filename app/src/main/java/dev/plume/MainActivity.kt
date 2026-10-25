@@ -1523,7 +1523,7 @@ class MainActivity : Activity() {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = dp(42).toFloat()
             setColor(0x66303342)
-            setStroke(dp(1), 0x334FFFFFF)
+            setStroke(dp(1), 0x334FFFFF)
         } else null
         val hidden = rowHiddenSet()
         val pinned = pinnedInputs()
