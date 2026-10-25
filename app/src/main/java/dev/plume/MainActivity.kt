@@ -1558,7 +1558,7 @@ class MainActivity : Activity() {
     private fun appTile(a: App, labeled: Boolean = true): View {
         val logo = LOGOS[a.pkg]
         val custom = customIcon(a.pkg)
-        if (homeStyle() == "default" && custom == null) {
+        if (homeStyle() == "default") {
             return tile(name, a.icon.constantState?.newDrawable(resources) ?: a.icon, false, a.pkg) { launch(a) }.apply { contentDescription = a.label }
         }
         val name = a.label.takeIf { labeled }
