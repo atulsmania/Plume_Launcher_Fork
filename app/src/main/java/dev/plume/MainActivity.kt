@@ -677,6 +677,7 @@ class MainActivity : Activity() {
     // ---------- theme ----------
 
     private fun wantDark() = prefersDark(prefs)
+    private fun homeStyle() = prefs.getString("home_style", "plume")!!
 
     private fun applyTheme() {
         dark = wantDark()
@@ -1036,11 +1037,17 @@ class MainActivity : Activity() {
         val channelsOn = (if (WATCH_NEXT in chFlip) 0 else 1) + appChannels().distinctBy { (_, p, n) -> channelKey(p, n) }.count { (_, p, n) -> channelOn(n, channelKey(p, n), chFlip) }
         val names = rowNames()
         val colour = colourIcons()
+        val homeStyle = homeStyle()
         // Rows with more than two values also step back with Left; two-value rows flip either way.
         val steps = mutableMapOf<Int, (Int) -> Unit>(
             R.string.theme to { d ->
                 prefs.edit().putString("theme", listOf("light", "dark", "auto").step(theme, d)).putBoolean("reopen_settings", true).apply()
                 recreate() // colours are applied once per activity; reopen the panel after
+            },
+            R.string.home_style to { d ->
+                prefs.edit().putString("home_style", listOf("plume", "default").step(homeStyle, d)).apply()
+                renderApps()
+                renderSettings(R.string.home_style)
             },
             R.string.row_position to { d ->
                 prefs.edit().putString("row_align", ROW_ALIGN.keys.toList().step(rowAlign(), d)).apply()
@@ -1057,6 +1064,9 @@ class MainActivity : Activity() {
             R.string.edit_apps_row to Triple(getString(R.string.edit_apps_row), "") { closeLauncherSettings(); startEdit(grab = null) },
             R.string.theme to Triple(getString(R.string.theme), getString(mapOf("light" to R.string.theme_light, "dark" to R.string.theme_dark, "auto" to R.string.theme_auto)[theme] ?: R.string.theme_light)) {
                 steps[R.string.theme]!!(1)
+            },
+            R.string.home_style to Triple(getString(R.string.home_style), getString(if (homeStyle == "default") R.string.home_style_default else R.string.home_style_plume)) {
+                steps[R.string.home_style]!!(1)
             },
             R.string.light_wallpaper to Triple(getString(R.string.light_wallpaper), wallpaperName(currentWallpaper(false))) { pickWallpaper(false) },
             R.string.dark_wallpaper to Triple(getString(R.string.dark_wallpaper), wallpaperName(currentWallpaper(true))) { pickWallpaper(true) },
@@ -1135,7 +1145,7 @@ class MainActivity : Activity() {
         val on = { b: Boolean -> getString(if (b) R.string.on else R.string.off) }
         val sections = listOf(
             Triple(R.string.section_appearance, "${rows[R.string.theme]!!.second} · ${wallpaperName(currentWallpaper(dark))}",
-                listOf(R.string.theme, R.string.light_wallpaper, R.string.dark_wallpaper, R.string.photo_fade, R.string.folder_photo_changes)),
+                listOf(R.string.theme, R.string.home_style, R.string.light_wallpaper, R.string.dark_wallpaper, R.string.photo_fade, R.string.folder_photo_changes)),
             Triple(R.string.section_app_row, "${rows[R.string.apps_in_row]!!.second} · ${rows[R.string.row_position]!!.second}",
                 listOf(R.string.edit_apps_row, R.string.sort_apps, R.string.apps_in_row, R.string.row_position, R.string.app_names, R.string.icon_style)),
             Triple(R.string.bottom_row, rowName(), listOf(R.string.row_name, R.string.cw_channels, R.string.cw_apps, R.string.restore_hidden)),
@@ -1507,6 +1517,14 @@ class MainActivity : Activity() {
         val gap = dp(GRID_GAP)
         val width = (resources.displayMetrics.widthPixels - dp(96) - gap * (ROW_TILES - 1)) / ROW_TILES
         appRow.removeAllViews()
+        val cleanFrameStyle = homeStyle() == "default"
+        appRow.setPadding(if (cleanFrameStyle) dp(16) else 0, if (cleanFrameStyle) dp(10) else 0, if (cleanFrameStyle) dp(16) else 0, if (cleanFrameStyle) dp(10) else 0)
+        appRow.background = if (cleanFrameStyle) GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(42).toFloat()
+            setColor(0x66303342)
+            setStroke(dp(1), 0x334FFFFF)
+        } else null
         val hidden = rowHiddenSet()
         val pinned = pinnedInputs()
         val tiles = sortedApps().filter { inRow(it.pkg, it.offline, hidden, pinned) }.map { appTile(it, labeled = false) }
@@ -1540,6 +1558,9 @@ class MainActivity : Activity() {
     private fun appTile(a: App, labeled: Boolean = true): View {
         val logo = LOGOS[a.pkg]
         val custom = customIcon(a.pkg)
+        if (homeStyle() == "default") {
+            return tile(name, a.icon.constantState?.newDrawable(resources) ?: a.icon, false, a.pkg) { launch(a) }.apply { contentDescription = a.label }
+        }
         val name = a.label.takeIf { labeled }
         // Colour mode keeps the same marks, tinted with the brand colour (or the colour the app's icon is mostly).
         val colour = colourIcons()
